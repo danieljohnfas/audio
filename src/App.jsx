@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Music } from 'lucide-react';
+import { Sun, Moon, Music, DownloadCloud, FileArchive } from 'lucide-react';
 import Dropzone from './components/Dropzone';
 import ExtractionResult from './components/ExtractionResult';
 import { extractCoverArt } from './utils/audioParser';
 import { generateSpectrogram } from './utils/spectrogram';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import classNames from 'classnames';
 
 function App() {
   const [theme, setTheme] = useState('light');
@@ -24,7 +27,7 @@ function App() {
     setIsProcessing(true);
 
     const initialResults = droppedFiles.map(f => ({
-      id: Math.random().toString(36).substr(2, 9), // unique id
+      id: Math.random().toString(36).substr(2, 9),
       file: f,
       isProcessing: true,
       coverUrl: null,
@@ -33,22 +36,18 @@ function App() {
       error: null
     }));
 
-    // Prepend to existing results so new files appear at the top
     setResults(prev => [...initialResults, ...prev]);
 
-    // Process each file sequentially to avoid UI freezing or memory spikes
     for (const item of initialResults) {
       try {
         const { coverUrl, tags } = await extractCoverArt(item.file);
         
-        // Update with cover art first to show progress
         setResults(prev => prev.map(r => 
           r.id === item.id 
             ? { ...r, coverUrl, metadata: tags } 
             : r
         ));
 
-        // Generate spectrogram
         const specUrl = await generateSpectrogram(item.file);
         
         setResults(prev => prev.map(r => 
@@ -67,6 +66,49 @@ function App() {
 
     setIsProcessing(false);
   };
+
+  const downloadZip = async (filter) => {
+    const zip = new JSZip();
+    let hasFiles = false;
+
+    for (const result of results) {
+      if (result.error || result.isProcessing) continue;
+      
+      // Default to file name without extension if metadata is missing
+      const baseName = result.metadata?.title 
+        ? `${result.metadata.artist ? result.metadata.artist + ' - ' : ''}${result.metadata.title}`
+        : result.file.name.replace(/\.[^/.]+$/, "");
+
+      // Helper to fetch base64 as blob
+      const fetchBlob = async (dataUrl) => {
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      };
+
+      if ((filter === 'all' || filter === 'covers') && result.coverUrl) {
+        const blob = await fetchBlob(result.coverUrl);
+        zip.file(`${baseName} - Cover.png`, blob);
+        hasFiles = true;
+      }
+      
+      if ((filter === 'all' || filter === 'spectrograms') && result.spectrogramUrl) {
+        const blob = await fetchBlob(result.spectrogramUrl);
+        zip.file(`${baseName} - Spectrogram.png`, blob);
+        hasFiles = true;
+      }
+    }
+
+    if (hasFiles) {
+      const content = await zip.generateAsync({ type: 'blob' });
+      const filename = filter === 'all' ? 'AudioRap-All.zip' 
+        : filter === 'covers' ? 'AudioRap-Covers.zip' 
+        : 'AudioRap-Spectrograms.zip';
+      saveAs(content, filename);
+    }
+  };
+
+  // Only show download options if we have at least one successfully processed item
+  const hasCompletedResults = results.some(r => !r.isProcessing && !r.error && (r.coverUrl || r.spectrogramUrl));
 
   return (
     <div className="app-container flex-col items-center">
@@ -99,6 +141,26 @@ function App() {
           )}
         </div>
 
+        {hasCompletedResults && (
+          <div className="flex justify-between items-center mb-4 p-4 glass-card" style={{ padding: '1rem', marginBottom: '1rem' }}>
+            <div className="flex items-center gap-2 font-semibold">
+              <FileArchive size={20} className="text-accent" />
+              <span>Download Bulk ZIP</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => downloadZip('covers')} className="btn-secondary" style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: 'var(--glass-border)', background: 'var(--bg-secondary)', cursor: 'pointer' }}>
+                Covers Only
+              </button>
+              <button onClick={() => downloadZip('spectrograms')} className="btn-secondary" style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: 'var(--glass-border)', background: 'var(--bg-secondary)', cursor: 'pointer' }}>
+                Spectrograms Only
+              </button>
+              <button onClick={() => downloadZip('all')} className="btn-primary" style={{ padding: '0.5rem 1rem' }}>
+                <DownloadCloud size={16} /> All Images
+              </button>
+            </div>
+          </div>
+        )}
+
         {results.map(result => (
           <div className="glass-card" key={result.id} style={{ marginBottom: '2rem' }}>
             {result.error ? (
@@ -112,6 +174,7 @@ function App() {
                 spectrogramUrl={result.spectrogramUrl} 
                 metadata={result.metadata || { title: result.file.name, artist: 'Processing...' }}
                 isProcessing={result.isProcessing}
+                fileName={result.file.name}
               />
             )}
           </div>

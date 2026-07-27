@@ -1,7 +1,11 @@
 import { Download, Image as ImageIcon, Activity, Disc } from 'lucide-react';
 
-export default function ExtractionResult({ coverUrl, spectrogramUrl, metadata, isProcessing }) {
+export default function ExtractionResult({ coverUrl, spectrogramUrl, metadata, isProcessing, fileName }) {
   if (isProcessing) return null;
+
+  const baseName = metadata?.title 
+    ? `${metadata.artist ? metadata.artist + ' - ' : ''}${metadata.title}`
+    : (fileName ? fileName.replace(/\.[^/.]+$/, "") : "audio");
 
   return (
     <div className="flex-col gap-8 w-full" style={{ animation: 'fadeIn 0.5s ease' }}>
@@ -86,7 +90,7 @@ export default function ExtractionResult({ coverUrl, spectrogramUrl, metadata, i
               <ImageIcon size={20} /> Cover Art
             </h3>
             {coverUrl && (
-              <a href={coverUrl} download="cover-art.png" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+              <a href={coverUrl} download={`${baseName} - Cover.png`} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
                 <Download size={16} /> Save
               </a>
             )}
@@ -111,7 +115,7 @@ export default function ExtractionResult({ coverUrl, spectrogramUrl, metadata, i
               <Activity size={20} /> Spectrogram
             </h3>
             {spectrogramUrl && (
-              <a href={spectrogramUrl} download="spectrogram.png" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+              <a href={spectrogramUrl} download={`${baseName} - Spectrogram.png`} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
                 <Download size={16} /> Save
               </a>
             )}
