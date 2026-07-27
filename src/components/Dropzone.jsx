@@ -21,16 +21,16 @@ export default function Dropzone({ onDrop, isProcessing }) {
     setIsDragActive(false);
     if (isProcessing) return;
 
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      onDrop(file);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('audio/'));
+    if (files.length > 0) {
+      onDrop(files);
     }
   };
 
   const handleFileInput = (e) => {
-    const file = e.target.files[0];
-    if (file && !isProcessing) {
-      onDrop(file);
+    const files = Array.from(e.target.files).filter(f => f.type.startsWith('audio/'));
+    if (files.length > 0 && !isProcessing) {
+      onDrop(files);
     }
   };
 
@@ -50,6 +50,7 @@ export default function Dropzone({ onDrop, isProcessing }) {
         ref={fileInputRef}
         onChange={handleFileInput}
         accept="audio/*"
+        multiple
         style={{ display: 'none' }}
       />
       

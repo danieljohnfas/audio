@@ -7,10 +7,7 @@ import { generateSpectrogram } from './utils/spectrogram';
 
 function App() {
   const [theme, setTheme] = useState('light');
-  const [file, setFile] = useState(null);
-  const [metadata, setMetadata] = useState(null);
-  const [coverUrl, setCoverUrl] = useState(null);
-  const [spectrogramUrl, setSpectrogramUrl] = useState(null);
+  const [results, setResults] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,34 +19,53 @@ function App() {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const handleFileDrop = async (droppedFile) => {
-    if (!droppedFile.type.startsWith('audio/')) {
-      setError('Please drop a valid audio file (e.g. mp3, flac, m4a).');
-      return;
-    }
-    
-    setFile(droppedFile);
+  const handleFileDrop = async (droppedFiles) => {
     setError(null);
     setIsProcessing(true);
-    setCoverUrl(null);
-    setSpectrogramUrl(null);
-    setMetadata(null);
 
-    try {
-      // Extract cover art and metadata
-      const { coverUrl, tags } = await extractCoverArt(droppedFile);
-      setCoverUrl(coverUrl);
-      setMetadata(tags);
+    const initialResults = droppedFiles.map(f => ({
+      id: Math.random().toString(36).substr(2, 9), // unique id
+      file: f,
+      isProcessing: true,
+      coverUrl: null,
+      spectrogramUrl: null,
+      metadata: null,
+      error: null
+    }));
 
-      // Generate spectrogram
-      const specUrl = await generateSpectrogram(droppedFile);
-      setSpectrogramUrl(specUrl);
+    // Prepend to existing results so new files appear at the top
+    setResults(prev => [...initialResults, ...prev]);
 
-    } catch (err) {
-      setError(err.message || 'An error occurred during extraction.');
-    } finally {
-      setIsProcessing(false);
+    // Process each file sequentially to avoid UI freezing or memory spikes
+    for (const item of initialResults) {
+      try {
+        const { coverUrl, tags } = await extractCoverArt(item.file);
+        
+        // Update with cover art first to show progress
+        setResults(prev => prev.map(r => 
+          r.id === item.id 
+            ? { ...r, coverUrl, metadata: tags } 
+            : r
+        ));
+
+        // Generate spectrogram
+        const specUrl = await generateSpectrogram(item.file);
+        
+        setResults(prev => prev.map(r => 
+          r.id === item.id 
+            ? { ...r, spectrogramUrl: specUrl, isProcessing: false } 
+            : r
+        ));
+      } catch (err) {
+        setResults(prev => prev.map(r => 
+          r.id === item.id 
+            ? { ...r, error: err.message || 'An error occurred during extraction.', isProcessing: false } 
+            : r
+        ));
+      }
     }
+
+    setIsProcessing(false);
   };
 
   return (
@@ -83,16 +99,23 @@ function App() {
           )}
         </div>
 
-        {(coverUrl || spectrogramUrl || isProcessing) && (
-          <div className="glass-card">
-            <ExtractionResult 
-              coverUrl={coverUrl} 
-              spectrogramUrl={spectrogramUrl} 
-              metadata={metadata}
-              isProcessing={isProcessing}
-            />
+        {results.map(result => (
+          <div className="glass-card" key={result.id} style={{ marginBottom: '2rem' }}>
+            {result.error ? (
+              <div className="p-4" style={{ color: '#ef4444' }}>
+                <h3 style={{ fontWeight: 'bold' }}>{result.file.name}</h3>
+                <p>{result.error}</p>
+              </div>
+            ) : (
+              <ExtractionResult 
+                coverUrl={result.coverUrl} 
+                spectrogramUrl={result.spectrogramUrl} 
+                metadata={result.metadata || { title: result.file.name, artist: 'Processing...' }}
+                isProcessing={result.isProcessing}
+              />
+            )}
           </div>
-        )}
+        ))}
       </main>
     </div>
   );
