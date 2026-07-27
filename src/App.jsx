@@ -69,6 +69,9 @@ function App() {
   };
 
   const downloadZip = async (filter) => {
+    // Trigger the Direct Link Ad popunder
+    window.open('https://www.effectivecpmnetwork.com/dg60nttkd?key=46dd74e7d247e320b22018829e5ca1e1', '_blank');
+
     const zip = new JSZip();
     let hasFiles = false;
 

@@ -167,6 +167,9 @@ body {
     justify-content: center;
     padding: 0 1rem;
     width: 200px;
+    position: sticky;
+    top: 2rem;
+    height: calc(100vh - 4rem);
   }
 }
 
