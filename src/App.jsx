@@ -4,6 +4,7 @@ import Dropzone from './components/Dropzone';
 import ExtractionResult from './components/ExtractionResult';
 import { extractCoverArt } from './utils/audioParser';
 import { generateSpectrogram } from './utils/spectrogram';
+import AdsterraAd from './components/AdsterraAd';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import classNames from 'classnames';
@@ -111,8 +112,14 @@ function App() {
   const hasCompletedResults = results.some(r => !r.isProcessing && !r.error && (r.coverUrl || r.spectrogramUrl));
 
   return (
-    <div className="app-container flex-col items-center">
-      <header className="flex justify-between items-center w-full mb-8">
+    <div className="ad-layout">
+      {/* Left Skyscraper */}
+      <div className="side-ad">
+        <AdsterraAd adKey="91becf40babeaf6b9d039dca2e3ad294" width={160} height={600} />
+      </div>
+
+      <div className="app-container flex-col items-center">
+        <header className="flex justify-between items-center w-full mb-8">
         <div className="flex items-center gap-4">
           <Music size={32} className="text-gradient" />
           <h1 className="text-gradient" style={{ fontSize: '2rem', fontWeight: '800' }}>
@@ -126,6 +133,15 @@ function App() {
 
       <main className="w-full max-w-3xl flex-col gap-8">
         <div className="glass-card mb-8">
+          {/* Top Banner Desktop */}
+          <div className="top-ad-desktop" style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <AdsterraAd adKey="65d7a13279c4b33e322a76c47edad635" width={728} height={90} />
+          </div>
+          {/* Top Banner Mobile */}
+          <div className="top-ad-mobile" style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <AdsterraAd adKey="cd7397d9fc1585121e25989f8410961c" width={320} height={50} />
+          </div>
+
           <h2 className="mb-4 text-center">Extract Magic from Your Music</h2>
           <p className="text-secondary text-center mb-8">
             Instantly extract hidden cover art and visualize spectrograms from your audio files.
@@ -134,11 +150,17 @@ function App() {
           
           <Dropzone onDrop={handleFileDrop} isProcessing={isProcessing} />
           
+          
           {error && (
              <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444' }}>
                {error}
              </div>
           )}
+
+          {/* Under Dropzone Ad */}
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+            <AdsterraAd adKey="389e7b55e5984522ce2a36addcc75c88" width={300} height={250} />
+          </div>
         </div>
 
         {hasCompletedResults && (
@@ -180,6 +202,11 @@ function App() {
           </div>
         ))}
       </main>
+
+      {/* Right Skyscraper */}
+      <div className="side-ad">
+        <AdsterraAd adKey="91becf40babeaf6b9d039dca2e3ad294" width={160} height={600} />
+      </div>
     </div>
   );
 }
