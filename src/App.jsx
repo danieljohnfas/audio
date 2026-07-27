@@ -203,6 +203,8 @@ function App() {
         ))}
       </main>
 
+      </div>
+
       {/* Right Skyscraper */}
       <div className="side-ad">
         <AdsterraAd adKey="91becf40babeaf6b9d039dca2e3ad294" width={160} height={600} />
