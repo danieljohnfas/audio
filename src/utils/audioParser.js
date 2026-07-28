@@ -1,9 +1,24 @@
 import * as jsmediatags from 'jsmediatags';
 
-export function extractCoverArt(file) {
+async function fetchOnlineCoverArt(title, artist) {
+  if (!title || !artist) return null;
+  try {
+    const query = encodeURIComponent(`${title} ${artist}`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      return data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+    }
+  } catch (err) {
+    console.error('Failed to fetch online cover art:', err);
+  }
+  return null;
+}
+
+export function extractCoverArt(file, useOnlineFetch = false) {
   return new Promise((resolve, reject) => {
     jsmediatags.read(file, {
-      onSuccess: function(tag) {
+      onSuccess: async function(tag) {
         const tags = tag.tags;
         let coverUrl = null;
         
@@ -15,6 +30,8 @@ export function extractCoverArt(file) {
           }
           const base64 = btoa(base64String);
           coverUrl = `data:${format};base64,${base64}`;
+        } else if (useOnlineFetch && tags.title && tags.artist) {
+          coverUrl = await fetchOnlineCoverArt(tags.title, tags.artist);
         }
         
         resolve({

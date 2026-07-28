@@ -14,6 +14,7 @@ function App() {
   const [results, setResults] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [useOnlineFetch, setUseOnlineFetch] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -41,7 +42,7 @@ function App() {
 
     for (const item of initialResults) {
       try {
-        const { coverUrl, tags } = await extractCoverArt(item.file);
+        const { coverUrl, tags } = await extractCoverArt(item.file, useOnlineFetch);
         
         setResults(prev => prev.map(r => 
           r.id === item.id 
@@ -150,6 +151,18 @@ function App() {
             Instantly extract hidden cover art and visualize spectrograms from your audio files.
             Everything happens securely on your device.
           </p>
+          
+          <div className="flex justify-center mb-6">
+            <label className="flex items-center gap-2 cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
+              <input 
+                type="checkbox" 
+                checked={useOnlineFetch} 
+                onChange={(e) => setUseOnlineFetch(e.target.checked)}
+                style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--accent-color)' }}
+              />
+              Fetch missing covers from the internet
+            </label>
+          </div>
           
           <Dropzone onDrop={handleFileDrop} isProcessing={isProcessing} />
           
